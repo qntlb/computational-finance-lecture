@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>net.finmath</groupId>
+  <artifactId>computational-finance-lecture</artifactId>
+  <versioning>
+    <versions>
+      <version>0.0.1-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20201220171913</lastUpdated>
+  </versioning>
+</metadata>

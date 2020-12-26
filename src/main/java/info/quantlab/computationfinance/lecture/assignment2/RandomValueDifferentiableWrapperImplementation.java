@@ -23,7 +23,7 @@ public class RandomValueDifferentiableWrapperImplementation implements RandomVal
 	RandomValueDifferentiableWrapperImplementation(double[] samples) {
 		value = new RandomVariableDifferentiableAAD(new RandomVariableFromDoubleArray(0.0, samples));
 	}
-	
+
 	private RandomValueDifferentiableWrapperImplementation(RandomVariable value) {
 		this.value = value;
 	}
@@ -31,22 +31,22 @@ public class RandomValueDifferentiableWrapperImplementation implements RandomVal
 	@Override
 	public RandomValueFactory getFactory() {
 		return new RandomValueFactory() {
-			
+
 			@Override
 			public RandomValue zero() {
 				return new RandomValueDifferentiableWrapperImplementation(0.0);
 			}
-			
+
 			@Override
 			public RandomValue one() {
 				return new RandomValueDifferentiableWrapperImplementation(1.0);
 			}
-			
+
 			@Override
 			public RandomValue fromConstant(double constant) {
 				return new RandomValueDifferentiableWrapperImplementation(constant);
 			}
-			
+
 			@Override
 			public RandomValue fromArray(double[] values) {
 				return new RandomValueDifferentiableWrapperImplementation(values);
@@ -135,6 +135,8 @@ public class RandomValueDifferentiableWrapperImplementation implements RandomVal
 
 	@Override
 	public RandomValue getDerivativeWithRespectTo(RandomValueDifferentiable x) {
-		return ((RandomValueDifferentiable)value).getDerivativeWithRespectTo(x);
+		return new RandomValueWrapperImplementation(((RandomVariableDifferentiable)value).getGradient().get(
+				((RandomVariableDifferentiable)
+						((RandomValueDifferentiableWrapperImplementation)x).value).getID()));
 	}
 }

@@ -6,9 +6,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import net.finmath.aadexperiments.randomvalue.RandomValue;
+import net.finmath.aadexperiments.randomvalue.RandomValueDifferentiable;
 import net.finmath.aadexperiments.randomvalue.RandomValueFactory;
 import net.finmath.aadexperiments.value.ConvertableToFloatingPoint;
 import net.finmath.functions.AnalyticFormulas;
+import net.finmath.montecarlo.RandomVariableFromDoubleArray;
+import net.finmath.montecarlo.automaticdifferentiation.RandomVariableDifferentiable;
 
 public class Assignment2Checker {
 
@@ -25,9 +28,9 @@ public class Assignment2Checker {
 	public Result check(Assignment2 solution, int level) {
 		switch(level) {
 		case 1:
-			return new Result(false, "Test of getRandomValueFromArray: Test is not implemented yet. Your solution may or may not be correct.\n");
+			return testRandomvalue(solution);
 		case 2:
-			return new Result(false, "Test of getRandomDifferentiableValueFromArray: Test is not implemented yet. Your solution may or may not be correct.\n");
+			return testRandomDifferentiableValue(solution);
 		case 3:
 			return testAssigmentDigitalCaplet(solution);
 		case 4:
@@ -43,6 +46,52 @@ public class Assignment2Checker {
 		}
 	}
 
+	public Result testRandomvalue(Assignment2 solution) {
+		double[] values = new double[] { 5.0, 1.0, 3.0, 4.0, 1.0, 0.0, -1.0, 2.0, -3.0 };
+		
+		var randomValue = solution.getRandomValueFromArray(values);
+		
+		var randomValueAbs = randomValue.squared().sqrt().expectation();
+		
+		if(!(randomValueAbs instanceof ConvertableToFloatingPoint)) {
+			return new Result(false, "Test of getRandomValueFromArray: Object does not implement ConvertableToFloatingPoint. Your implementation should also implement ConvertableToFloatingPoint, "
+					+ "at least for object that are the result of expectation(). We need this to check"
+					+ "your results.");
+		}
+
+		if(Math.abs(((ConvertableToFloatingPoint)randomValueAbs).asFloatingPoint() - (new RandomVariableFromDoubleArray(0.0, values).squared().sqrt().average().doubleValue())) > 1E-10) {
+			return new Result(false, "Test of getRandomValueFromArray: Implementation of .squared().sqrt().expecation() appears to be inaccurate.");
+		}
+		
+		return new Result(true, "Test of getRandomValueFromArray: We have checked some implementation, but not everything. Looks OK so far.");
+	}
+
+	public Result testRandomDifferentiableValue(Assignment2 solution) {
+		double[] values = new double[] { 5.0, 1.0, 3.0, 4.0, 1.0, 0.0, -1.0, 2.0, -3.0 };
+		
+		var randomValue = solution.getRandomDifferentiableValueFromArray(values);
+
+		if(!(randomValue instanceof RandomValueDifferentiable)) {
+			return new Result(false, "Test of getRandomDifferentiableValueFromArray: Object does not implement RandomValueDifferentiable.");
+		}
+
+		var y = randomValue.squared();
+		
+		if(!(y instanceof RandomValueDifferentiable)) {
+			return new Result(false, "Test of getRandomDifferentiableValueFromArray: Object returned by squared() does not implement RandomValueDifferentiable.");
+		}
+
+		var dydx = ((RandomValueDifferentiable)y).getDerivativeWithRespectTo((RandomValueDifferentiable)randomValue);
+		
+		if(Math.abs(
+				((ConvertableToFloatingPoint)(dydx.expectation())).asFloatingPoint() - 
+				((ConvertableToFloatingPoint)(randomValue.mult(2.0).expectation())).asFloatingPoint()) > 1E-10) {
+			return new Result(false, "Test of getRandomDifferentiableValueFromArray: Derivative of squared() look not correct.");
+		}
+		
+		return new Result(true, "Test of getRandomDifferentiableValueFromArray: We have checked some implementation, but not everything. Looks OK so far.");
+	}
+	
 	public Result testAssigmentDigitalCaplet(Assignment2 solution) {
 
 		final double modelForwardRate = 0.05;

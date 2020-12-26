@@ -33,8 +33,11 @@ public class Assignment2Checker {
 		case 4:
 			return testAssigmentForwardInArrears(solution);
 		case 5:
-			return new Result(false, "Test of getMonteCarloBlackModelDeltaXxx: Tests are not implemented yet. Your solution may or may not be correct.\n");
-
+		{
+			Result result1 = testAssigmentDigitalCapletDelta(solution);
+			Result result2 = testAssigmentForwardInArrearsDelta(solution);
+			return new Result(result1.success && result2.success, result1.message + "\n" + result2.message);
+		}
 		default:
 			return new Result(false, "Your solution may or may not be correct. Tests are not implemented yet.\n");
 		}
@@ -90,6 +93,60 @@ public class Assignment2Checker {
 		return new Result(success,message);
 	}
 
+	public Result testAssigmentDigitalCapletDelta(Assignment2 solution) {
+
+		final double modelForwardRate = 0.05;
+		final double modelPayoffUnit = 0.9;
+		final double modelVolatility = 0.3;
+		
+		final double productStrike = 0.06;
+		final double productMaturity = 2.0;
+		final double productPeriodLength = 0.5;
+		
+		final int numberOfPaths = 100000;
+		
+		/*
+		 * Create a normal distributed random sample vector
+		 */
+		// Create normal distributed random variable
+		Random random = new Random(3413);
+		
+		double[] samples = new double[numberOfPaths];
+		for(int pathIndex=0; pathIndex<numberOfPaths; pathIndex++) {
+			samples[pathIndex] = random.nextGaussian();
+		}
+
+		RandomValue normal = solution.getRandomValueFromArray(samples);
+		RandomValueFactory randomValueFactory = normal.getFactory();
+
+		RandomValue forwardRate = randomValueFactory.fromConstant(modelForwardRate);
+		RandomValue payoffUnit = randomValueFactory.fromConstant(modelPayoffUnit);
+		RandomValue volatility = randomValueFactory.fromConstant(modelVolatility);
+		RandomValue strike = randomValueFactory.fromConstant(productStrike);
+		RandomValue maturity = randomValueFactory.fromConstant(productMaturity);
+		RandomValue periodLength = randomValueFactory.fromConstant(productPeriodLength);
+
+		RandomValue brownianMotionUponMaturity = normal.mult(maturity.sqrt());
+
+		RandomValue delta = solution.getMonteCarloBlackModelDeltaOfDigitalCaplet(forwardRate, payoffUnit, volatility, brownianMotionUponMaturity, strike, maturity, periodLength);
+
+		double deltaMonteCarlo = ((ConvertableToFloatingPoint)delta).asFloatingPoint();
+		double delataAnalytic = AnalyticFormulas.blackModelDigitalCapletDelta(modelForwardRate, modelVolatility, productPeriodLength, modelPayoffUnit, productMaturity, productStrike);
+
+		boolean success = Math.abs(delataAnalytic-deltaMonteCarlo) < 1E-1;
+		String message = "Test of getMonteCarloBlackModelDeltaOfDigitalCaplet: ";
+		if(success) message += "Congratulation! The delta of the digital caplet appears to be correct.";
+		else {
+			message += "Sorry, the delta of the digital caplet appears to be not correct.\n";
+			message += "  Expected: " + delataAnalytic + "\n";
+			message += "  Actual..: " + deltaMonteCarlo + "\n";
+		}
+
+		message += "\n";
+
+		return new Result(success,message);
+	}
+
 	private Result testAssigmentForwardInArrears(Assignment2 solution) {
 		final double modelForwardRate = 0.05;
 		final double modelPayoffUnit = 0.9;
@@ -129,12 +186,66 @@ public class Assignment2Checker {
 
 		boolean success = Math.abs(valueAnalytic-valueMonteCarlo) < 1E-3;
 		String message = "Test of getMonteCarloBlackModelValueOfForwardRateInArrears: ";
-		if(success) message += "Congratulation! The valuation of the digital caplet appears to be correct.";
-		else message += "Sorry, the valuation of the digital caplet appears to be not correct.";
+		if(success) message += "Congratulation! The valuation of the Forward Rate In Arrears appears to be correct.";
+		else {
+			message += "Sorry, the valuation of the Forward Rate In Arrears appears to be not correct.\n";
+			message += "  Expected: " + valueAnalytic + "\n";
+			message += "  Actual..: " + valueMonteCarlo + "\n";
+		}
 
 		message += "\n";
 
 		return new Result(success,message);
 	}
 
+	private Result testAssigmentForwardInArrearsDelta(Assignment2 solution) {
+		final double modelForwardRate = 0.05;
+		final double modelPayoffUnit = 0.9;
+		final double modelVolatility = 0.3;
+		
+		final double productMaturity = 2.0;
+		final double productPeriodLength = 0.5;
+		
+		final int numberOfPaths = 100000;
+		
+		/*
+		 * Create a normal distributed random sample vector
+		 */
+		// Create normal distributed random variable
+		Random random = new Random(3413);
+		
+		double[] samples = new double[numberOfPaths];
+		for(int pathIndex=0; pathIndex<numberOfPaths; pathIndex++) {
+			samples[pathIndex] = random.nextGaussian();
+		}
+
+		RandomValue normal = solution.getRandomValueFromArray(samples);
+		RandomValueFactory randomValueFactory = normal.getFactory();
+
+		RandomValue forwardRate = randomValueFactory.fromConstant(modelForwardRate);
+		RandomValue payoffUnit = randomValueFactory.fromConstant(modelPayoffUnit);
+		RandomValue volatility = randomValueFactory.fromConstant(modelVolatility);
+		RandomValue maturity = randomValueFactory.fromConstant(productMaturity);
+		RandomValue periodLength = randomValueFactory.fromConstant(productPeriodLength);
+
+		RandomValue brownianMotionUponMaturity = normal.mult(maturity.sqrt());
+
+		RandomValue delta = solution.getMonteCarloBlackModelDeltaOfForwardRateInArrears(forwardRate, payoffUnit, volatility, brownianMotionUponMaturity, maturity, periodLength);
+
+		double deltaMonteCarlo = ((ConvertableToFloatingPoint)delta).asFloatingPoint();
+		double delataAnalytic = productPeriodLength * modelPayoffUnit * (1 + 2*modelForwardRate * productPeriodLength * Math.exp(modelVolatility*modelVolatility*(productMaturity+productPeriodLength)));
+
+		boolean success = Math.abs(delataAnalytic-deltaMonteCarlo) < 1E-1;
+		String message = "Test of getMonteCarloBlackModelDeltaOfForwardRateInArrears: ";
+		if(success) message += "Congratulation! The delta of the Forward Rate In Arrears appears to be correct.";
+		else {
+			message += "Sorry, the delta of the Forward Rate In Arrears appears to be not correct.\n";
+			message += "  Expected: " + delataAnalytic + "\n";
+			message += "  Actual..: " + deltaMonteCarlo + "\n";
+		}
+
+		message += "\n";
+
+		return new Result(success,message);
+	}
 }

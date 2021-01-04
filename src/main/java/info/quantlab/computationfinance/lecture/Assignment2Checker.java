@@ -165,7 +165,7 @@ public class Assignment2Checker {
 			samples[pathIndex] = random.nextGaussian();
 		}
 
-		RandomValue normal = solution.getRandomValueFromArray(samples);
+		RandomValue normal = solution.getRandomDifferentiableValueFromArray(samples);
 		RandomValueFactory randomValueFactory = normal.getFactory();
 
 		RandomValue forwardRate = randomValueFactory.fromConstant(modelForwardRate);
@@ -268,7 +268,7 @@ public class Assignment2Checker {
 			samples[pathIndex] = random.nextGaussian();
 		}
 
-		RandomValue normal = solution.getRandomValueFromArray(samples);
+		RandomValue normal = solution.getRandomDifferentiableValueFromArray(samples);
 		RandomValueFactory randomValueFactory = normal.getFactory();
 
 		RandomValue forwardRate = randomValueFactory.fromConstant(modelForwardRate);

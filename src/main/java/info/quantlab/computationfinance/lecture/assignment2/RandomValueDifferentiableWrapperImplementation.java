@@ -3,6 +3,7 @@ package info.quantlab.computationfinance.lecture.assignment2;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
+import net.finmath.aadexperiments.randomvalue.ConvertableToFloatingPointArray;
 import net.finmath.aadexperiments.randomvalue.RandomValue;
 import net.finmath.aadexperiments.randomvalue.RandomValueDifferentiable;
 import net.finmath.aadexperiments.randomvalue.RandomValueFactory;
@@ -12,7 +13,7 @@ import net.finmath.montecarlo.automaticdifferentiation.RandomVariableDifferentia
 import net.finmath.montecarlo.automaticdifferentiation.backward.RandomVariableDifferentiableAAD;
 import net.finmath.stochastic.RandomVariable;
 
-public class RandomValueDifferentiableWrapperImplementation implements RandomValueDifferentiable, ConvertableToFloatingPoint {
+public class RandomValueDifferentiableWrapperImplementation implements RandomValueDifferentiable, ConvertableToFloatingPoint, ConvertableToFloatingPointArray {
 
 	private RandomVariable value;
 
@@ -21,11 +22,31 @@ public class RandomValueDifferentiableWrapperImplementation implements RandomVal
 	}
 
 	RandomValueDifferentiableWrapperImplementation(double[] samples) {
-		value = new RandomVariableDifferentiableAAD(new RandomVariableFromDoubleArray(0.0, samples));
+		if(samples.length == 1) {
+			value = new RandomVariableDifferentiableAAD(new RandomVariableFromDoubleArray(0.0, samples[0]));
+		}
+		else {
+			value = new RandomVariableDifferentiableAAD(new RandomVariableFromDoubleArray(0.0, samples));
+		}
 	}
 
 	private RandomValueDifferentiableWrapperImplementation(RandomVariable value) {
 		this.value = value;
+	}
+
+	public RandomValueDifferentiableWrapperImplementation(RandomValue value) {
+		if(value instanceof ConvertableToFloatingPointArray) {
+			double[] samples = ((ConvertableToFloatingPointArray) value).asFloatingPointArray();
+			if(samples.length == 1) {
+				this.value = new RandomVariableDifferentiableAAD(new RandomVariableFromDoubleArray(0.0, samples[0]));
+			}
+			else {
+				this.value = new RandomVariableDifferentiableAAD(new RandomVariableFromDoubleArray(0.0, samples));
+			}
+		}
+		else {
+			throw new IllegalArgumentException("Unable to wrap value in a differentiable object. (Another implementation would maybe allow it).");
+		}
 	}
 
 	@Override
@@ -131,6 +152,11 @@ public class RandomValueDifferentiableWrapperImplementation implements RandomVal
 	@Override
 	public Double asFloatingPoint() {
 		return value.doubleValue();
+	}
+
+	@Override
+	public double[] asFloatingPointArray() {
+		return value.getRealizations();
 	}
 
 	@Override

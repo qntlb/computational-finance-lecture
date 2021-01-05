@@ -3,13 +3,14 @@ package info.quantlab.computationfinance.lecture.assignment2;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
+import net.finmath.aadexperiments.randomvalue.ConvertableToFloatingPointArray;
 import net.finmath.aadexperiments.randomvalue.RandomValue;
 import net.finmath.aadexperiments.randomvalue.RandomValueFactory;
 import net.finmath.aadexperiments.value.ConvertableToFloatingPoint;
 import net.finmath.montecarlo.RandomVariableFromDoubleArray;
 import net.finmath.stochastic.RandomVariable;
 
-public class RandomValueWrapperImplementation implements RandomValue, ConvertableToFloatingPoint {
+public class RandomValueWrapperImplementation implements RandomValue, ConvertableToFloatingPoint, ConvertableToFloatingPointArray {
 
 	private RandomVariable value;
 
@@ -18,7 +19,12 @@ public class RandomValueWrapperImplementation implements RandomValue, Convertabl
 	}
 
 	RandomValueWrapperImplementation(double[] samples) {
-		value = new RandomVariableFromDoubleArray(0.0, samples);
+		if(samples.length == 1) {
+			value = new RandomVariableFromDoubleArray(0.0, samples[0]);
+		}
+		else {
+			value = new RandomVariableFromDoubleArray(0.0, samples);
+		}
 	}
 	
 	RandomValueWrapperImplementation(RandomVariable value) {
@@ -130,4 +136,8 @@ public class RandomValueWrapperImplementation implements RandomValue, Convertabl
 		return value.doubleValue();
 	}
 
+	@Override
+	public double[] asFloatingPointArray() {
+		return value.getRealizations();
+	}
 }

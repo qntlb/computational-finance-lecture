@@ -48,11 +48,11 @@ public class Assignment2Checker {
 
 	public Result testRandomvalue(Assignment2 solution) {
 		double[] values = new double[] { 5.0, 1.0, 3.0, 4.0, 1.0, 0.0, -1.0, 2.0, -3.0 };
-		
+
 		var randomValue = solution.getRandomValueFromArray(values);
-		
+
 		var randomValueAbs = randomValue.squared().sqrt().expectation();
-		
+
 		if(!(randomValueAbs instanceof ConvertableToFloatingPoint)) {
 			return new Result(false, "Test of getRandomValueFromArray: Object does not implement ConvertableToFloatingPoint. Your implementation should also implement ConvertableToFloatingPoint, "
 					+ "at least for object that are the result of expectation(). We need this to check"
@@ -62,13 +62,13 @@ public class Assignment2Checker {
 		if(Math.abs(((ConvertableToFloatingPoint)randomValueAbs).asFloatingPoint() - (new RandomVariableFromDoubleArray(0.0, values).squared().sqrt().average().doubleValue())) > 1E-10) {
 			return new Result(false, "Test of getRandomValueFromArray: Implementation of .squared().sqrt().expecation() appears to be inaccurate.");
 		}
-		
+
 		return new Result(true, "Test of getRandomValueFromArray: We have checked some implementation, but not everything. Looks OK so far.");
 	}
 
 	public Result testRandomDifferentiableValue(Assignment2 solution) {
 		double[] values = new double[] { 5.0, 1.0, 3.0, 4.0, 1.0, 0.0, -1.0, 2.0, -3.0 };
-		
+
 		var randomValue = solution.getRandomDifferentiableValueFromArray(values);
 
 		if(!(randomValue instanceof RandomValueDifferentiable)) {
@@ -76,40 +76,40 @@ public class Assignment2Checker {
 		}
 
 		var y = randomValue.squared();
-		
+
 		if(!(y instanceof RandomValueDifferentiable)) {
 			return new Result(false, "Test of getRandomDifferentiableValueFromArray: Object returned by squared() does not implement RandomValueDifferentiable.");
 		}
 
 		var dydx = ((RandomValueDifferentiable)y).getDerivativeWithRespectTo((RandomValueDifferentiable)randomValue);
-		
+
 		if(Math.abs(
 				((ConvertableToFloatingPoint)(dydx.expectation())).asFloatingPoint() - 
 				((ConvertableToFloatingPoint)(randomValue.mult(2.0).expectation())).asFloatingPoint()) > 1E-10) {
 			return new Result(false, "Test of getRandomDifferentiableValueFromArray: Derivative of squared() look not correct.");
 		}
-		
+
 		return new Result(true, "Test of getRandomDifferentiableValueFromArray: We have checked some implementation, but not everything. Looks OK so far.");
 	}
-	
+
 	public Result testAssigmentDigitalCaplet(Assignment2 solution) {
 
 		final double modelForwardRate = 0.05;
 		final double modelPayoffUnit = 0.9;
 		final double modelVolatility = 0.3;
-		
+
 		final double productStrike = 0.06;
 		final double productMaturity = 2.0;
 		final double productPeriodLength = 0.5;
-		
+
 		final int numberOfPaths = 100000;
-		
+
 		/*
 		 * Create a normal distributed random sample vector
 		 */
 		// Create normal distributed random variable
 		Random random = new Random(3413);
-		
+
 		double[] samples = new double[numberOfPaths];
 		for(int pathIndex=0; pathIndex<numberOfPaths; pathIndex++) {
 			samples[pathIndex] = random.nextGaussian();
@@ -147,27 +147,73 @@ public class Assignment2Checker {
 		final double modelForwardRate = 0.05;
 		final double modelPayoffUnit = 0.9;
 		final double modelVolatility = 0.3;
-		
+
 		final double productStrike = 0.06;
 		final double productMaturity = 2.0;
 		final double productPeriodLength = 0.5;
-		
+
 		final int numberOfPaths = 100000;
-		
+
 		/*
 		 * Create a normal distributed random sample vector
 		 */
 		// Create normal distributed random variable
 		Random random = new Random(3413);
-		
+
 		double[] samples = new double[numberOfPaths];
 		for(int pathIndex=0; pathIndex<numberOfPaths; pathIndex++) {
 			samples[pathIndex] = random.nextGaussian();
 		}
 
-		RandomValue normal = solution.getRandomDifferentiableValueFromArray(samples);
-		RandomValueFactory randomValueFactory = normal.getFactory();
+		double deltaAnalytic = AnalyticFormulas.blackModelDigitalCapletDelta(modelForwardRate, modelVolatility, productPeriodLength, modelPayoffUnit, productMaturity, productStrike);
 
+		/*
+		 * Try to call the function with a differentiable - see what is happening
+		 */
+		boolean successWithRandomValueDifferentiable = false;
+		double deltaMonteCarloWithDifferentiable = Double.NaN;
+		try {
+			RandomValueFactory randomValueFactory = solution.getRandomDifferentiableValueFromArray(samples).getFactory();
+			RandomValue delta = getDigitalCapletDelta(randomValueFactory, samples, modelForwardRate, modelPayoffUnit, modelVolatility, productStrike, productMaturity, productPeriodLength, solution);
+
+			deltaMonteCarloWithDifferentiable = ((ConvertableToFloatingPoint)delta).asFloatingPoint();
+
+			successWithRandomValueDifferentiable = Math.abs(deltaAnalytic-deltaMonteCarloWithDifferentiable) < 1E-1;
+		}
+		catch(Exception e) {}
+
+		/*
+		 * Try to call the function with a RandomVaue - see what is happening
+		 */
+		boolean successWithRandomValue = false;
+		double deltaMonteCarlo = Double.NaN;
+		try {
+			RandomValueFactory randomValueFactory = solution.getRandomValueFromArray(samples).getFactory();
+			RandomValue delta = getDigitalCapletDelta(randomValueFactory, samples, modelForwardRate, modelPayoffUnit, modelVolatility, productStrike, productMaturity, productPeriodLength, solution);
+
+			deltaMonteCarlo = ((ConvertableToFloatingPoint)delta).asFloatingPoint();
+
+			successWithRandomValue = Math.abs(deltaAnalytic-deltaMonteCarlo) < 1E-1;
+		}
+		catch(Exception e) {}
+
+		boolean success = successWithRandomValue || successWithRandomValueDifferentiable;
+
+		String message = "Test of getMonteCarloBlackModelDeltaOfDigitalCaplet: ";
+		if(success) message += "Congratulation! The delta of the digital caplet appears to be correct.\n";
+		else message += "Sorry, the delta of the digital caplet appears to be not correct.\n";
+
+		message += "  Expected: " + deltaAnalytic + "\n";
+		message += "  Actual..: " + deltaMonteCarlo + " (using RandomValue) \n";
+		message += "  Actual..: " + deltaMonteCarloWithDifferentiable + " (using RandomValueDifferentiable)\n";
+
+		message += "\n";
+
+		return new Result(success,message);
+	}
+
+	private RandomValue getDigitalCapletDelta(RandomValueFactory randomValueFactory, double[] samples, double modelForwardRate, double modelPayoffUnit, double modelVolatility, double productStrike, double productMaturity, double productPeriodLength, Assignment2 solution) {
+		RandomValue normal = randomValueFactory.fromArray(samples);
 		RandomValue forwardRate = randomValueFactory.fromConstant(modelForwardRate);
 		RandomValue payoffUnit = randomValueFactory.fromConstant(modelPayoffUnit);
 		RandomValue volatility = randomValueFactory.fromConstant(modelVolatility);
@@ -179,39 +225,25 @@ public class Assignment2Checker {
 
 		RandomValue delta = solution.getMonteCarloBlackModelDeltaOfDigitalCaplet(forwardRate, payoffUnit, volatility, brownianMotionUponMaturity, strike, maturity, periodLength);
 
-		double deltaMonteCarlo = ((ConvertableToFloatingPoint)delta).asFloatingPoint();
-		double delataAnalytic = AnalyticFormulas.blackModelDigitalCapletDelta(modelForwardRate, modelVolatility, productPeriodLength, modelPayoffUnit, productMaturity, productStrike);
-
-		boolean success = Math.abs(delataAnalytic-deltaMonteCarlo) < 1E-1;
-		String message = "Test of getMonteCarloBlackModelDeltaOfDigitalCaplet: ";
-		if(success) message += "Congratulation! The delta of the digital caplet appears to be correct.";
-		else {
-			message += "Sorry, the delta of the digital caplet appears to be not correct.\n";
-			message += "  Expected: " + delataAnalytic + "\n";
-			message += "  Actual..: " + deltaMonteCarlo + "\n";
-		}
-
-		message += "\n";
-
-		return new Result(success,message);
+		return delta;
 	}
 
 	private Result testAssigmentForwardInArrears(Assignment2 solution) {
 		final double modelForwardRate = 0.05;
 		final double modelPayoffUnit = 0.9;
 		final double modelVolatility = 0.3;
-		
+
 		final double productMaturity = 2.0;
 		final double productPeriodLength = 0.5;
-		
+
 		final int numberOfPaths = 100000;
-		
+
 		/*
 		 * Create a normal distributed random sample vector
 		 */
 		// Create normal distributed random variable
 		Random random = new Random(3413);
-		
+
 		double[] samples = new double[numberOfPaths];
 		for(int pathIndex=0; pathIndex<numberOfPaths; pathIndex++) {
 			samples[pathIndex] = random.nextGaussian();
@@ -235,12 +267,11 @@ public class Assignment2Checker {
 
 		boolean success = Math.abs(valueAnalytic-valueMonteCarlo) < 1E-3;
 		String message = "Test of getMonteCarloBlackModelValueOfForwardRateInArrears: ";
-		if(success) message += "Congratulation! The valuation of the Forward Rate In Arrears appears to be correct.";
-		else {
-			message += "Sorry, the valuation of the Forward Rate In Arrears appears to be not correct.\n";
-			message += "  Expected: " + valueAnalytic + "\n";
-			message += "  Actual..: " + valueMonteCarlo + "\n";
-		}
+		if(success) message += "Congratulation! The valuation of the Forward Rate In Arrears appears to be correct.\n";
+		else message += "Sorry, the valuation of the Forward Rate In Arrears appears to be not correct.\n";
+
+		message += "  Expected: " + valueAnalytic + "\n";
+		message += "  Actual..: " + valueMonteCarlo + "\n";
 
 		message += "\n";
 
@@ -251,26 +282,75 @@ public class Assignment2Checker {
 		final double modelForwardRate = 0.05;
 		final double modelPayoffUnit = 0.9;
 		final double modelVolatility = 0.3;
-		
+
 		final double productMaturity = 2.0;
 		final double productPeriodLength = 0.5;
-		
+
 		final int numberOfPaths = 100000;
-		
+
 		/*
 		 * Create a normal distributed random sample vector
 		 */
 		// Create normal distributed random variable
 		Random random = new Random(3413);
-		
+
 		double[] samples = new double[numberOfPaths];
 		for(int pathIndex=0; pathIndex<numberOfPaths; pathIndex++) {
 			samples[pathIndex] = random.nextGaussian();
 		}
 
-		RandomValue normal = solution.getRandomDifferentiableValueFromArray(samples);
-		RandomValueFactory randomValueFactory = normal.getFactory();
+		double deltaAnalytic = productPeriodLength * modelPayoffUnit * (1 + 2*modelForwardRate * productPeriodLength * Math.exp(modelVolatility*modelVolatility*(productMaturity+productPeriodLength)));
 
+		/*
+		 * Try to call the function with a differentiable - see what is happening
+		 */
+		boolean successWithRandomValueDifferentiable = false;
+		double deltaMonteCarloWithDifferentiable = Double.NaN;
+		try {
+			RandomValueFactory randomValueFactory = solution.getRandomDifferentiableValueFromArray(samples).getFactory();
+			RandomValue delta = getForwardInArrearsDelta(randomValueFactory, samples, modelForwardRate, modelPayoffUnit, modelVolatility, productMaturity, productPeriodLength, solution);
+
+			deltaMonteCarloWithDifferentiable = ((ConvertableToFloatingPoint)delta).asFloatingPoint();
+
+			successWithRandomValueDifferentiable = Math.abs(deltaAnalytic-deltaMonteCarloWithDifferentiable) < 1E-1;
+		}
+		catch(Exception e) {}
+
+		/*
+		 * Try to call the function with a RandomVaue - see what is happening
+		 */
+		boolean successWithRandomValue = false;
+		double deltaMonteCarlo = Double.NaN;
+		try {
+			RandomValueFactory randomValueFactory = solution.getRandomValueFromArray(samples).getFactory();
+			RandomValue delta = getForwardInArrearsDelta(randomValueFactory, samples, modelForwardRate, modelPayoffUnit, modelVolatility, productMaturity, productPeriodLength, solution);
+
+			deltaMonteCarlo = ((ConvertableToFloatingPoint)delta).asFloatingPoint();
+
+			successWithRandomValue = Math.abs(deltaAnalytic-deltaMonteCarlo) < 1E-1;
+		}
+		catch(Exception e) {}
+
+		boolean success = successWithRandomValue || successWithRandomValueDifferentiable;
+
+		String message = "Test of getMonteCarloBlackModelDeltaOfForwardRateInArrears: ";
+		if(success) message += "Congratulation! The delta of the Forward Rate In Arrears appears to be correct.\n";
+		else message += "Sorry, the delta of the Forward Rate In Arrears appears to be not correct.\n";
+
+		message += "  Expected: " + deltaAnalytic + "\n";
+		message += "  Actual..: " + deltaMonteCarlo + " (using RandomValue) \n";
+		message += "  Actual..: " + deltaMonteCarloWithDifferentiable + " (using RandomValueDifferentiable)\n";
+
+		message += "\n";
+
+		return new Result(success,message);
+	}
+
+	private RandomValue getForwardInArrearsDelta(RandomValueFactory randomValueFactory, double[] samples,
+			double modelForwardRate, double modelPayoffUnit, double modelVolatility, double productMaturity,
+			double productPeriodLength, Assignment2 solution) {
+
+		RandomValue normal = randomValueFactory.fromArray(samples);
 		RandomValue forwardRate = randomValueFactory.fromConstant(modelForwardRate);
 		RandomValue payoffUnit = randomValueFactory.fromConstant(modelPayoffUnit);
 		RandomValue volatility = randomValueFactory.fromConstant(modelVolatility);
@@ -281,20 +361,6 @@ public class Assignment2Checker {
 
 		RandomValue delta = solution.getMonteCarloBlackModelDeltaOfForwardRateInArrears(forwardRate, payoffUnit, volatility, brownianMotionUponMaturity, maturity, periodLength);
 
-		double deltaMonteCarlo = ((ConvertableToFloatingPoint)delta).asFloatingPoint();
-		double delataAnalytic = productPeriodLength * modelPayoffUnit * (1 + 2*modelForwardRate * productPeriodLength * Math.exp(modelVolatility*modelVolatility*(productMaturity+productPeriodLength)));
-
-		boolean success = Math.abs(delataAnalytic-deltaMonteCarlo) < 1E-1;
-		String message = "Test of getMonteCarloBlackModelDeltaOfForwardRateInArrears: ";
-		if(success) message += "Congratulation! The delta of the Forward Rate In Arrears appears to be correct.";
-		else {
-			message += "Sorry, the delta of the Forward Rate In Arrears appears to be not correct.\n";
-			message += "  Expected: " + delataAnalytic + "\n";
-			message += "  Actual..: " + deltaMonteCarlo + "\n";
-		}
-
-		message += "\n";
-
-		return new Result(success,message);
+		return delta;
 	}
 }

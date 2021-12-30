@@ -12,13 +12,21 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<finmath-lib.version>6.0.0</finmath-lib.version>
+		<finmath-plot.version>0.4.2</finmath-plot.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>net.finmath</groupId>
 			<artifactId>finmath-lib</artifactId>
-			<version>5.0.9</version>
+			<version>${finmath-lib.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.finmath</groupId>
+			<artifactId>finmath-lib-plot-extensions</artifactId>
+			<version>${finmath-plot.version}</version>
 		</dependency>
 
 		<dependency>

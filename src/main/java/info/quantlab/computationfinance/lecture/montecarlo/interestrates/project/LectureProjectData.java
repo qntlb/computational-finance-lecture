@@ -1,4 +1,4 @@
-package net.finmath.experiments.montecarlo.interestrates.project;
+package info.quantlab.computationfinance.lecture.montecarlo.interestrates.project;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,10 +26,23 @@ public class LectureProjectData {
 	private static final double tenorPeriodLength = 0.5;
 
 	public static void main(String[] args) {
+		
+		System.out.println("Forward rates:");
+		ForwardCurve forwardCurve = getForwardCurve();
+		for(double fixing = 0.0; fixing <= 50.0; fixing += 0.5) {
+			System.out.print("   " + String.format("L(%.1f,%.1f;0.0) \t = %.4f", fixing, fixing+0.5, forwardCurve.getForward(null, fixing)));
+
+			if(Math.ceil(fixing) == fixing) System.out.print("\t");
+			else System.out.print("\n");
+		}
+
+		System.out.println("\n");
+
+		System.out.println("Swaption calibration products:");
 		List<Map<String,Object>> calibrationProductSpecs = getCalibrationProducts();
 		
 		for(Map calibrationProductSpec : calibrationProductSpecs) {
-			System.out.println(calibrationProductSpec);
+			System.out.println("   " + calibrationProductSpec);
 		}
 		
 	}

@@ -41,13 +41,13 @@ public class TermStructureMonteCarloSimulationExperiments {
 	private static final int	seed			= 3141;
 
 	public static void main(String[] args) throws Exception {
-				(new TermStructureMonteCarloSimulationExperiments()).testBondUnderMeasure();
-				(new TermStructureMonteCarloSimulationExperiments()).testForwardRateUnderMeasure();
-		(new TermStructureMonteCarloSimulationExperiments()).testCapletSmile();
-				(new TermStructureMonteCarloSimulationExperiments()).testCapletSmiles();
+		TermStructureMonteCarloSimulationExperiments.testBondUnderMeasure();
+		TermStructureMonteCarloSimulationExperiments.testForwardRateUnderMeasure();
+		TermStructureMonteCarloSimulationExperiments.testCapletSmile();
+		TermStructureMonteCarloSimulationExperiments.testCapletSmiles();
 	}
 
-	public void testBondUnderMeasure() throws Exception {
+	public static void testBondUnderMeasure() throws Exception {
 		final RandomVariableFactory randomVariableFactory = new RandomVariableFromArrayFactory();
 
 		final double forwardRate = 0.05;				// constant forward rate
@@ -59,7 +59,7 @@ public class TermStructureMonteCarloSimulationExperiments {
 		for(final Boolean useDiscountCurve : new Boolean[] { false, true }) {
 
 			for(final String measure : new String[] { "terminal", "spot"}) {
-				
+
 				final TermStructureMonteCarloSimulationModel simulationModel = ModelFactory.createTermStuctureModel(
 						randomVariableFactory,
 						measure,
@@ -101,7 +101,7 @@ public class TermStructureMonteCarloSimulationExperiments {
 		}
 	}
 
-	private void testForwardRateUnderMeasure() throws Exception {
+	private static void testForwardRateUnderMeasure() throws Exception {
 		final RandomVariableFactory randomVariableFactory = new RandomVariableFromArrayFactory();
 
 		final double forwardRate = 0.05;				// constant forward rate
@@ -111,9 +111,9 @@ public class TermStructureMonteCarloSimulationExperiments {
 		final double correlationDecayParam = 0.0;		// one factor, correlation of all drivers is 1
 
 		for(final String measure : new String[] { "terminal", "spot"}) {
-						
+
 			for(final Boolean useDiscountCurve : new Boolean[] { false, true }) {
-			
+
 				final TermStructureMonteCarloSimulationModel lmm = ModelFactory.createTermStuctureModel(
 						randomVariableFactory,
 						measure,
@@ -135,7 +135,7 @@ public class TermStructureMonteCarloSimulationExperiments {
 
 					final double valueBondAnalytic = 1.0/Math.pow((1+forwardRate*periodLength), (fixing+periodLength)/periodLength);
 					final double value = productForwardRate.getValue(lmm) / valueBondAnalytic;
-//					final double value = productForwardRate.getValue(lmm) / productBond.getValue(lmm);
+					//					final double value = productForwardRate.getValue(lmm) / productBond.getValue(lmm);
 
 					final double valueAnalytic = forwardRate * periodLength;
 
@@ -157,8 +157,8 @@ public class TermStructureMonteCarloSimulationExperiments {
 			}
 		}
 	}
-	
-	public void testCapletSmile() throws Exception {
+
+	public static void testCapletSmile() throws Exception {
 
 		final RandomVariableFactory randomVariableFactory = new RandomVariableFromArrayFactory();
 
@@ -218,12 +218,12 @@ public class TermStructureMonteCarloSimulationExperiments {
 			}
 
 			final Plot plot = Plots.createScatter(strikes, impliedVolatilities, 0.0, 0.2, 5)
-			.setTitle("Caplet (lognormal) implied volatility using lognormal model (" + measure + " )")
-			.setXAxisLabel("strike")
-			.setYAxisLabel("implied volatility")
-			.setYRange(0.15, 0.45)
-			.setXAxisNumberFormat(new DecimalFormat("0.0%"))
-			.setYAxisNumberFormat(new DecimalFormat("0.0%"));
+					.setTitle("Caplet (lognormal) implied volatility using lognormal model (" + measure + " )")
+					.setXAxisLabel("strike")
+					.setYAxisLabel("implied volatility")
+					.setYRange(0.15, 0.45)
+					.setXAxisNumberFormat(new DecimalFormat("0.0%"))
+					.setYAxisNumberFormat(new DecimalFormat("0.0%"));
 
 			final String filename = "Caplet-implied-vol-measure-" + measure;
 			plot.saveAsPDF(new File(filename + ".pdf"), 900, 400);
@@ -232,7 +232,7 @@ public class TermStructureMonteCarloSimulationExperiments {
 		}
 	}
 
-	public void testCapletSmiles() throws Exception {
+	public static void testCapletSmiles() throws Exception {
 
 		final RandomVariableFactory randomVariableFactory = new RandomVariableFromArrayFactory();
 
@@ -247,7 +247,7 @@ public class TermStructureMonteCarloSimulationExperiments {
 		final List<Double> strikes = new ArrayList<Double>();
 		final Map<String, List<Double>> impliedVolCurves = new HashMap<>();
 		for(double normality = 0.0; normality <= 1.0; normality += 0.1) {		// 0 = lognormal model and 1 = normal model
-			
+
 			final TermStructureMonteCarloSimulationModel lmm = ModelFactory.createTermStuctureModel(
 					randomVariableFactory, measure, simulationTimeInterpolationMethod,
 					forwardRate, periodLength, useDiscountCurve, volatility, normality, correlationDecayParam,
@@ -287,11 +287,11 @@ public class TermStructureMonteCarloSimulationExperiments {
 			impliedVolCurves.putIfAbsent(String.valueOf(normality), impliedVolatilities);
 
 		}
-		
+
 		Plot plot = Plots.createScatter(strikes, impliedVolCurves, 0.0, 0.2, 5)
-		.setTitle("Caplet (lognormal) implied volatility using different displacements (" + measure + " measure)")
-		.setXAxisLabel("strike").setYAxisLabel("implied volatility")
-		.setYRange(0.15, 0.45).setXAxisNumberFormat(new DecimalFormat("0.0%")).setYAxisNumberFormat(new DecimalFormat("0.0%"));
+				.setTitle("Caplet (lognormal) implied volatility using different displacements (" + measure + " measure)")
+				.setXAxisLabel("strike").setYAxisLabel("implied volatility")
+				.setYRange(0.15, 0.45).setXAxisNumberFormat(new DecimalFormat("0.0%")).setYAxisNumberFormat(new DecimalFormat("0.0%"));
 
 		final String filename = "Caplet-implied-vol-for-displacement-measure-" + measure;
 		plot.saveAsPDF(new File(filename + ".pdf"), 900, 400);

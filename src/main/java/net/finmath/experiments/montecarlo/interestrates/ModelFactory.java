@@ -12,7 +12,7 @@ import net.finmath.montecarlo.BrownianMotion;
 import net.finmath.montecarlo.BrownianMotionFromMersenneRandomNumbers;
 import net.finmath.montecarlo.RandomVariableFactory;
 import net.finmath.montecarlo.interestrate.CalibrationProduct;
-import net.finmath.montecarlo.interestrate.TermStructureMonteCarloSimulationFromTermStructureModel;
+import net.finmath.montecarlo.interestrate.LIBORMonteCarloSimulationFromLIBORModel;
 import net.finmath.montecarlo.interestrate.TermStructureMonteCarloSimulationModel;
 import net.finmath.montecarlo.interestrate.models.LIBORMarketModelFromCovarianceModel;
 import net.finmath.montecarlo.interestrate.models.covariance.BlendedLocalVolatilityModel;
@@ -21,6 +21,7 @@ import net.finmath.montecarlo.interestrate.models.covariance.LIBORCorrelationMod
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORCovarianceModel;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORCovarianceModelFromVolatilityAndCorrelation;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModel;
+import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModelFourParameterExponentialForm;
 import net.finmath.montecarlo.interestrate.models.covariance.LIBORVolatilityModelFromGivenMatrix;
 import net.finmath.montecarlo.process.EulerSchemeFromProcessModel;
 import net.finmath.montecarlo.process.MonteCarloProcess;
@@ -37,6 +38,7 @@ public class ModelFactory {
 			double periodLength,
 			boolean useDiscountCurve,
 			double volatility,
+			double volatilityExponentialDecay,
 			double localVolNormalityBlend,
 			double correlationDecayParam,
 			int numberOfFactors,
@@ -83,9 +85,10 @@ public class ModelFactory {
 		for(int i=0; i<volatilities.length; i++) {
 			Arrays.fill(volatilities[i], volatility);
 		}
-		final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFromGivenMatrix(
-				randomVariableFactory, timeDiscretization, liborPeriodDiscretization, volatilities);
+//		final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFromGivenMatrix(randomVariableFactory, timeDiscretization, liborPeriodDiscretization, volatilities);
 
+		final LIBORVolatilityModel volatilityModel = new LIBORVolatilityModelFourParameterExponentialForm(timeDiscretization, liborPeriodDiscretization, volatility, 0, volatilityExponentialDecay, 0.0, false);
+		
 		/*
 		 * Create a correlation model rho_{i,j} = exp(-a * abs(T_i-T_j))
 		 */
@@ -100,7 +103,9 @@ public class ModelFactory {
 				new LIBORCovarianceModelFromVolatilityAndCorrelation(timeDiscretization,
 						liborPeriodDiscretization, volatilityModel, correlationModel);
 
-		// BlendedLocalVolatlityModel
+		/*
+		 * BlendedLocalVolatlityModel: Puts the factor (a L_{i}(0) + (1-a) L_{i}(t)) in front of the diffusion.
+		 */
 		final LIBORCovarianceModel covarianceModelBlended = new BlendedLocalVolatilityModel(
 				covarianceModelWithConstantVolatility, forwardCurve, localVolNormalityBlend, false);
 
@@ -115,7 +120,7 @@ public class ModelFactory {
 				);
 
 		// Empty array of calibration items - hence, model will use given covariance
-		final CalibrationProduct[] calibrationItems = null;
+		final CalibrationProduct[] calibrationItems = new CalibrationProduct[0];
 
 		/*
 		 * Create corresponding LIBOR Market Model
@@ -126,9 +131,49 @@ public class ModelFactory {
 
 		final BrownianMotion brownianMotion = new BrownianMotionFromMersenneRandomNumbers(timeDiscretization, numberOfFactors, numberOfPaths, seed);
 
-		final MonteCarloProcess process = new EulerSchemeFromProcessModel(liborMarketModel, brownianMotion);
+		final MonteCarloProcess process = new EulerSchemeFromProcessModel(
+				liborMarketModel, brownianMotion, EulerSchemeFromProcessModel.Scheme.EULER);
 
-		return new TermStructureMonteCarloSimulationFromTermStructureModel(process);
+		return new LIBORMonteCarloSimulationFromLIBORModel(process);
+	}
+
+	/*
+	 * Some version with default arguments
+	 */
+	public static TermStructureMonteCarloSimulationModel createTermStuctureModel(
+			RandomVariableFactory randomVariableFactory,
+			String measure,
+			double forwardRate,
+			double periodLength,
+			boolean useDiscountCurve,
+			double volatility,
+			double volatilityExponentialDecay,
+			double localVolNormalityBlend,
+			double correlationDecayParam,
+			int numberOfFactors,
+			int numberOfPaths,
+			int seed
+			) throws CalculationException {
+
+		return createTermStuctureModel(randomVariableFactory, measure, "round_down" /* simulationTimeInterpolationMethod */, forwardRate, periodLength, useDiscountCurve, volatility, volatilityExponentialDecay, localVolNormalityBlend, correlationDecayParam, numberOfFactors, numberOfPaths, seed);
+	}
+
+	public static TermStructureMonteCarloSimulationModel createTermStuctureModel(
+			RandomVariableFactory randomVariableFactory,
+			String measure,
+			String simulationTimeInterpolationMethod,
+			double forwardRate,
+			double periodLength,
+			boolean useDiscountCurve,
+			double volatility,
+			double localVolNormalityBlend,
+			double correlationDecayParam,
+			int numberOfFactors,
+			int numberOfPaths,
+			int seed
+			) throws CalculationException {
+
+		return createTermStuctureModel(randomVariableFactory, measure, simulationTimeInterpolationMethod, forwardRate, periodLength, useDiscountCurve, volatility, 0.0 /* volatilityExponentialDecay */, localVolNormalityBlend, correlationDecayParam, numberOfFactors, numberOfPaths, seed);
 	}
 
 	public static TermStructureMonteCarloSimulationModel createTermStuctureModel(
@@ -145,6 +190,6 @@ public class ModelFactory {
 			int seed
 			) throws CalculationException {
 
-		return createTermStuctureModel(randomVariableFactory, measure, "round_down", forwardRate, periodLength, useDiscountCurve, volatility, localVolNormalityBlend, correlationDecayParam, numberOfFactors, numberOfPaths, seed);
+		return createTermStuctureModel(randomVariableFactory, measure, "round_down" /* simulationTimeInterpolationMethod */, forwardRate, periodLength, useDiscountCurve, volatility,  0.0 /* volatilityExponentialDecay */, localVolNormalityBlend, correlationDecayParam, numberOfFactors, numberOfPaths, seed);
 	}
 }

@@ -1,22 +1,14 @@
 package info.quantlab.computationfinance.lecture.montecarlo.interestrates.project;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.finmath.exception.CalculationException;
-import net.finmath.functions.AnalyticFormulas;
 import net.finmath.marketdata.model.curves.DiscountCurve;
 import net.finmath.marketdata.model.curves.DiscountCurveFromForwardCurve;
 import net.finmath.marketdata.model.curves.ForwardCurve;
 import net.finmath.marketdata.model.curves.ForwardCurveInterpolation;
-import net.finmath.marketdata.products.SwapAnnuity;
-import net.finmath.montecarlo.interestrate.CalibrationProduct;
-import net.finmath.montecarlo.interestrate.products.AbstractTermStructureMonteCarloProduct;
-import net.finmath.montecarlo.interestrate.products.SwaptionGeneralizedAnalyticApproximation;
-import net.finmath.montecarlo.interestrate.products.SwaptionSimple;
 import net.finmath.time.TimeDiscretizationFromArray;
 
 public class LectureProjectData {

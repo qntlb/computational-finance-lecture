@@ -4,28 +4,21 @@
 package net.finmath.experiments.montecarlo.interestrates;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.finmath.exception.CalculationException;
 import net.finmath.functions.AnalyticFormulas;
 import net.finmath.montecarlo.RandomVariableFactory;
 import net.finmath.montecarlo.RandomVariableFromArrayFactory;
 import net.finmath.montecarlo.interestrate.TermStructureMonteCarloSimulationModel;
-import net.finmath.montecarlo.interestrate.products.AbstractTermStructureMonteCarloProduct;
 import net.finmath.montecarlo.interestrate.products.Bond;
 import net.finmath.montecarlo.interestrate.products.Caplet;
-import net.finmath.montecarlo.interestrate.products.Caplet.ValueUnit;
 import net.finmath.montecarlo.interestrate.products.TermStructureMonteCarloProduct;
-import net.finmath.plots.DoubleToRandomVariableFunction;
 import net.finmath.plots.Plot;
-import net.finmath.plots.PlotProcess2D;
 import net.finmath.plots.Plots;
-import net.finmath.time.TimeDiscretizationFromArray;
 
 /**
  * This class visualizes some of the numerical errors associated with a Monte-Carlo simulation

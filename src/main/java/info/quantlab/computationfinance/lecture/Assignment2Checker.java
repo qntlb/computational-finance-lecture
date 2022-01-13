@@ -2,16 +2,12 @@ package info.quantlab.computationfinance.lecture;
 
 import java.util.Random;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import net.finmath.aadexperiments.randomvalue.RandomValue;
 import net.finmath.aadexperiments.randomvalue.RandomValueDifferentiable;
 import net.finmath.aadexperiments.randomvalue.RandomValueFactory;
 import net.finmath.aadexperiments.value.ConvertableToFloatingPoint;
 import net.finmath.functions.AnalyticFormulas;
 import net.finmath.montecarlo.RandomVariableFromDoubleArray;
-import net.finmath.montecarlo.automaticdifferentiation.RandomVariableDifferentiable;
 
 public class Assignment2Checker {
 

@@ -14,6 +14,8 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<finmath-lib.version>6.0.0</finmath-lib.version>
 		<finmath-plot.version>0.4.2</finmath-plot.version>
+		<!-- maven plugins -->
+		<compiler-plugin.version>3.8.1</compiler-plugin.version>
 	</properties>
 
 	<dependencies>
@@ -41,7 +43,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.6.1</version>
+				<version>${compiler-plugin.version}</version>
 				<configuration>
 					<source>11</source>
 					<target>11</target>

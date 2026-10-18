@@ -1,4 +1,4 @@
-package net.finmath.experiments.montecarlo.process;
+package info.quantlab.computationalfinance.lecture.legacy;
 
 import java.time.LocalDateTime;
 import java.util.Map;

@@ -21,7 +21,7 @@ import net.finmath.plots.Plot;
 import net.finmath.plots.Plots;
 
 /**
- * This class visualizes some of the numerical errors associated with a Monte-Carlo simulation
+ * This class visualises some of the numerical errors associated with a Monte-Carlo simulation
  * of an Euler scheme approximation of a discrete forward rate term structure model (LIBOR Market Model)
  * and its relation to the equivalent martingale measure.
  *
@@ -34,9 +34,9 @@ public class TermStructureMonteCarloSimulationExperiments {
 	private static final int	seed			= 3141;
 
 	public static void main(String[] args) throws Exception {
-		TermStructureMonteCarloSimulationExperiments.testBondUnderMeasure();
-		TermStructureMonteCarloSimulationExperiments.testForwardRateUnderMeasure();
-		TermStructureMonteCarloSimulationExperiments.testCapletSmile();
+//		TermStructureMonteCarloSimulationExperiments.testBondUnderMeasure();
+//		TermStructureMonteCarloSimulationExperiments.testForwardRateUnderMeasure();
+//		TermStructureMonteCarloSimulationExperiments.testCapletSmile();
 		TermStructureMonteCarloSimulationExperiments.testCapletSmiles();
 	}
 
@@ -164,7 +164,7 @@ public class TermStructureMonteCarloSimulationExperiments {
 		final double correlationDecayParam = 0.0;		// one factor, correlation of all drivers is 1
 
 		for(final String measure : new String[] { "terminal", "spot"}) {
-			final TermStructureMonteCarloSimulationModel lmm = ModelFactory.createTermStuctureModel(
+			final TermStructureMonteCarloSimulationModel termStructureMonteCalroSimulation = ModelFactory.createTermStuctureModel(
 					randomVariableFactory,
 					measure,
 					simulationTimeInterpolationMethod,
@@ -187,18 +187,18 @@ public class TermStructureMonteCarloSimulationExperiments {
 			for(double strike = 0.025; strike < 0.10; strike += 0.0025) {
 
 				final TermStructureMonteCarloProduct product = new Caplet(maturity, periodLength, strike);
-				final double value = product.getValue(lmm);
+				final double value = product.getValue(termStructureMonteCalroSimulation);
 
 				/*
 				 * Conversion to implied volatility
 				 */
 				// Determine the zero bond at payment (numerically)
 				final TermStructureMonteCarloProduct bondAtPayment = new Bond(maturity+periodLength);
-				final double discountFactor = bondAtPayment.getValue(lmm);
+				final double discountFactor = bondAtPayment.getValue(termStructureMonteCalroSimulation);
 
 				// Determine the forward rate at fixing (numerically)
 				final TermStructureMonteCarloProduct forwardRateProduct = new ForwardRate(maturity, periodLength, periodLength);
-				final double forward = forwardRateProduct.getValue(lmm) / discountFactor / periodLength;
+				final double forward = forwardRateProduct.getValue(termStructureMonteCalroSimulation) / discountFactor / periodLength;
 
 				final double optionMaturity = maturity;
 				final double optionStrike = strike;
@@ -275,7 +275,7 @@ public class TermStructureMonteCarloSimulationExperiments {
 				final double impliedVol = AnalyticFormulas.blackScholesOptionImpliedVolatility(forward, optionMaturity, optionStrike, payoffUnit, optionValue);
 
 				strikes.add(strike);
-				impliedVolatilities.add(impliedVol);
+				impliedVolatilities.add(optionValue);
 			}
 			impliedVolCurves.putIfAbsent(String.valueOf(normality), impliedVolatilities);
 
@@ -283,8 +283,9 @@ public class TermStructureMonteCarloSimulationExperiments {
 
 		Plot plot = Plots.createScatter(strikes, impliedVolCurves, 0.0, 0.2, 5)
 				.setTitle("Caplet (lognormal) implied volatility using different displacements (" + measure + " measure)")
-				.setXAxisLabel("strike").setYAxisLabel("implied volatility")
-				.setYRange(0.15, 0.45).setXAxisNumberFormat(new DecimalFormat("0.0%")).setYAxisNumberFormat(new DecimalFormat("0.0%"));
+				.setXAxisLabel("strike").setYAxisLabel("value")
+//				.setYRange(0.15, 0.45)
+				.setXAxisNumberFormat(new DecimalFormat("0.0%")).setYAxisNumberFormat(new DecimalFormat("0.0%"));
 
 		final String filename = "Caplet-implied-vol-for-displacement-measure-" + measure;
 		plot.saveAsPDF(new File(filename + ".pdf"), 900, 400);
